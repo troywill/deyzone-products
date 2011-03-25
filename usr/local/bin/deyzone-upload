@@ -4,6 +4,8 @@ use strict;
 use DBI;
 use ConfigReader::Simple;
 
+my $product_id = shift || die "Please provide a product id, e.g. 0056";
+
 my $config = ConfigReader::Simple->new("/usr/local/etc/deyzone.cfg");
 
 my $databasename = $config->get("databasename");
@@ -12,13 +14,8 @@ my $username = $config->get("username");
 my $password = $config->get("password");
 
 my $dbh = DBI->connect("DBI:mysql:${databasename};host=${host}", $username, $password, { RaiseError => 1 } );
-# (insert query examples here...)
-# my $sth = $dbh->prepare('SELECT product_id FROM product');
-# my $sth = $dbh->prepare("SELECT product_id, model, date_added FROM product WHERE date_added > '2011-02-26' AND status=1 order by date_added ASC");
 
-
-
-open( IN, '<', '0056.html' );
+open( IN, '<', "${product_id}.html" ) || die "Unable to open ${product_id}.html";
 
 my $slurp = '';
 
@@ -28,7 +25,8 @@ while ( my $line = <IN> ) {
 
 $slurp = $dbh->quote($slurp);
 
-$dbh->do( "UPDATE product_description SET description = $slurp WHERE product_id=56 AND language_id>0" );
+$product_id *= 1;
+$dbh->do( "UPDATE product_description SET description = $slurp WHERE product_id=$product_id AND language_id>0" );
 
 __END__
 
