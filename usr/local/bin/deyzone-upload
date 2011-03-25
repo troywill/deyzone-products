@@ -26,6 +26,7 @@ while ( my $line = <IN> ) {
 $slurp = $dbh->quote($slurp);
 
 $product_id *= 1;
+print "Uploading ...\n";
 $dbh->do( "UPDATE product_description SET description = $slurp WHERE product_id=$product_id AND language_id>0" );
 
 __END__
