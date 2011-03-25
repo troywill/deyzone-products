@@ -4,7 +4,7 @@ use strict;
 use DBI;
 use ConfigReader::Simple;
 
-my $config = ConfigReader::Simple->new("/etc/deyzone.cfg");
+my $config = ConfigReader::Simple->new("/usr/local/etc/deyzone.cfg");
 
 my $databasename = $config->get("databasename");
 my $host = $config->get("host");
