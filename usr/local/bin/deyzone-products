@@ -1,0 +1,53 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use DBI;
+use ConfigReader::Simple;
+
+my $config = ConfigReader::Simple->new("/etc/deyzone.cfg");
+
+my $databasename = $config->get("databasename");
+my $host = $config->get("host");
+my $username = $config->get("username");
+my $password = $config->get("password");
+
+open( HTML, '>', 'deyzone-products.html' ) || die "Unable to open HTML for writing";
+print HTML "<table>\n";
+
+
+my $dbh = DBI->connect("DBI:mysql:${databasename};host=${host}", $username, $password, { RaiseError => 1 } );
+# (insert query examples here...)
+# my $sth = $dbh->prepare('SELECT product_id FROM product');
+# my $sth = $dbh->prepare("SELECT product_id, model, date_added FROM product WHERE date_added > '2011-02-26' AND status=1 order by date_added ASC");
+my $sth = $dbh->prepare("SELECT product_id, model, date_added FROM product WHERE status=1 AND product_id>0 order by date_added DESC");
+$sth->execute();
+
+my $counter = 0;
+while (my ( $product_id, $model, $date_added ) = $sth->fetchrow_array()) {
+    my $padded_product_id = sprintf("%04d", $product_id );
+    mkdir $padded_product_id || die "Unable to mkdir $padded_product_id";
+    my $sth_description = $dbh->prepare("SELECT product_id, name, description FROM product_description WHERE product_id = $product_id AND language_id = 1");
+    $sth_description->execute();
+    print "=> $product_id\n";
+    while (my ( $product_id, $name, $description ) = $sth_description->fetchrow_array()) {
+	open( NAME, '>', "$padded_product_id/${padded_product_id}.name" ) || die "Unable to open file";
+	print NAME $name;
+	close NAME;
+	print HTML "<tr><td><a href=\"http://www.sportempires.com/\&product_id=$product_id\">$product_id</a></td><td>$model</td><td>$name</td></tr>\n";
+	open( DESCRIPTION, '>', "$padded_product_id/${padded_product_id}.html" ) || die "Unable to open file";
+	$description =~ s/&lt;/\</g;
+	$description =~ s/&gt;/\>/g;
+	$description =~ s/<p.*?\>/\<p class='deyzone'\>/g;
+	$description =~ s/<span.*?\>//g;
+	$description =~ s/&amp;nbsp//g;
+	$description =~ s/&amp;quot;//g;
+	$description =~ s/&amp;&amp;//g;
+	$description =~ s/&quot;/\"/g;
+	print DESCRIPTION $description;
+	close DESCRIPTION;
+    }
+    $sth_description->finish;
+}
+$sth->finish;
+print HTML "</tabel>\n";
+exit;
