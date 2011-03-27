@@ -15,19 +15,27 @@ my $password = $config->get("password");
 
 my $dbh = DBI->connect("DBI:mysql:${databasename};host=${host}", $username, $password, { RaiseError => 1 } );
 
-open( IN, '<', "${product_id}.html" ) || die "Unable to open ${product_id}.html";
+open( HTML, '<', "${product_id}.html" ) || die "Unable to open ${product_id}.html";
+open( NAME, '<', "${product_id}.name" ) || die "Unable to open ${product_id}.name";
 
+#### HTML
 my $slurp = '';
-
-while ( my $line = <IN> ) {
+while ( my $line = <HTML> ) {
     $slurp .= $line;
 }
-
 $slurp = $dbh->quote($slurp);
-
 $product_id *= 1;
-print "Uploading ...\n";
+print "Uploading html ...\n";
 $dbh->do( "UPDATE product_description SET description = $slurp WHERE product_id=$product_id AND language_id>0" );
+
+#### NAME
+$slurp = '';
+while ( my $line = <NAME> ) {
+    $slurp .= $line;
+}
+$slurp = $dbh->quote($slurp);
+print "Uploading name ...\n";
+$dbh->do( "UPDATE product_description SET name = $slurp WHERE product_id=$product_id AND language_id>0" );
 
 __END__
 
